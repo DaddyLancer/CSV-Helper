@@ -1,0 +1,183 @@
+﻿/1000\/1200-01\/1200-01/B1\GASKET 1 of BRANCH /1200-01/B1;group;gasket;
+
+/1000 /1200-01 /1200-01/B1
+
+
+a	/1000;group;;
+b	/1200-01;group;;
+c	/1200-01/B1;group;;
+d	GASKET 1 of BRANCH /1200-01/B1;group;gasket;
+e	Cylinder;geometry;cylinder
+f	/1200-01/B2;group;;
+g	/1200-02;group;;
+h	/2300;group;;
+
+
+'#1	(?<=BRANCH\s).*\/\d*-\d*\/\w+							/xxxx-xx/xx				- Must have "Branch" in string, but is excluded from result
+'	d	GASKET 1 of BRANCH /1200-01/B1;group;gasket;		/1200-01/B1
+'
+'#2	(?<=\H)(\/\d*-\d*\/\w+)									/xxxx-xx/xx				- Must NOT have any any text or space before match.
+'	c	/1200-01/B1;group;;									/1200-01/B1
+'	f	/1200-01/B2;group;;									/1200-01/B2
+'
+'#3	\/\d*-\d.(?!\/)											/xxxx-xx				- Must NOT have "/" after first found
+'	b	/1200-01;group;;									/1200-01
+'	g	/1200-02;group;;									/1200-02
+
+
+
+
+
+
+
+
+
+/PIPES									;group;;
+ /1000									;group;;
+  /1200-01								;group;;
+
+   /1200-01/B1							;group;;
+    GASKET 1 of BRANCH /1200-01/B1		;group;gasket;
+    Cylinder							;geometry;cylinder
+    FLANGE 1 of BRANCH /1200-01/B1		;group;flange;
+
+   /1200-01/B2							;group;;
+    FLANGE 1 of BRANCH /1200-01/B2		;group;flange;
+    GASKET 1 of BRANCH /1200-01/B2		;group;gasket;
+    VALVE of BRANCH /1200-01/B2			;group;valve;
+    Cylinder							;geometry;cylinder
+    GASKET 1 of BRANCH /1200-01/B2		;group;gasket
+    FLANGE 2 of BRANCH /1200-01/B2		;group;flange
+
+   /1200-02								;group;;
+   /1200-02/B1							;group;;
+    ...
+
+
+-----------------
+
+
+/1000;group;;
+/1200-01;group;;
+/1200-01/B1;group;;
+GASKET 1 of BRANCH /1200-01/B1;group;gasket;
+Cylinder;geometry;cylinder;
+FLANGE 1 of BRANCH /1200-01/B1;group;flange;
+/1200-01/B2;group;;
+FLANGE 1 of BRANCH /1200-01/B2;group;flange;
+GASKET 1 of BRANCH /1200-01/B2;group;gasket;
+VALVE 1 of BRANCH /1200-01/B2;group;valve;
+Cylinder;geometry;cylinder;
+GASKET 1 of BRANCH /1200-01/B2;group;gasket;
+FLANGE 2 of BRANCH /1200-01/B2;group;flange;
+/1200-02;group;;
+/1200-02/B1;group;;
+
+...
+
+
+/PIPES
+/1000
+/1200-01
+
+/1200-01/B1
+GASKET 1 of BRANCH /1200-01/B1
+Cylinder
+FLANGE 1 of BRANCH /1200-01/B1
+
+/1200-01/B2
+FLANGE 1 of BRANCH /1200-01/B2
+GASKET 1 of BRANCH /1200-01/B2
+VALVE of BRANCH /1200-01/B2
+Cylinder
+GASKET 1 of BRANCH /1200-01/B2
+FLANGE 2 of BRANCH /1200-01/B2
+/1200-02
+/1200-02/B1
+
+
+
+
+
+
+
+    Private Sub btnPopulate_Click(sender As Object, e As EventArgs) Handles btnPopulate.Click
+
+        Dim RegMajor As New Regex("(\/\d*;)")
+        Dim RegMinor As New Regex("(\/\d*)(-\d.)(?!\/)")
+        Dim RegBranch As New Regex("\/\d*-\d*\/\w+", RegexOptions.IgnoreCase)
+        Dim RegBranchDetails As New Regex("(gasket|flange|valve|reducer|tee|elbow|attachment)\s?\d.?\s?of branch\s", RegexOptions.IgnoreCase)
+        Dim strLine As String
+        Dim lines As Integer = lstAllLines.Items.Count - 1
+
+        Dim intMajors = 0
+        ' regexbranch also matches in details
+        Dim curLine = 0
+
+        'For i = 0 To lstAllLines.Items.Count
+        'strLine = lstAllLines.Items.Item(i).ToString
+        'If RegMajor.IsMatch(strLine) Then
+        '       Dim MatchMajorNode = Strings.Trim(RegMajor.Match(strLine).Value).Trim(CChar(";"))
+        '       Dim MajorNode As New TreeNode(MatchMajorNode)
+        '        MajorNode.Name = intMajors
+        '        TreeView1.Nodes.Add(MajorNode)
+        '        intMajors = +1
+        'End If
+        'Next
+
+
+
+
+        For line = 0 To lstAllLines.Items.Count - 1
+            strLine = lstAllLines.Items(line).ToString
+            If RegMajor.IsMatch(strLine) Then
+                Dim MatchMajorNode = Strings.Trim(RegMajor.Match(strLine).Value).Trim(CChar(";"))
+                Dim MajorNode As New TreeNode(MatchMajorNode)
+                TreeView1.Nodes.Add(MajorNode)
+                line = +1
+                For i = line To lstAllLines.Items.Count - 1
+                    strLine = lstAllLines.Items(i).ToString
+                    If RegMinor.IsMatch(strLine) = True And RegBranch.IsMatch(strLine) = False Then
+                        Dim MatchMinorNode = RegMinor.Match(strLine).Value
+                        Dim MinorNode As New TreeNode(MatchMinorNode)
+                        MajorNode.Nodes.Add(MinorNode)
+
+                        Debug.Print("I: " & i & "    items.count: " & lstAllLines.Items.Count & "")
+                        For j = line To lstAllLines.Items.Count - 1
+                            strLine = lstAllLines.Items(j).ToString
+                            If RegBranch.IsMatch(strLine) = True And RegBranchDetails.IsMatch(strLine) = False Then
+                                Dim MatchBranchNode = RegBranch.Match(strLine).Value
+                                Dim BranchNode As New TreeNode(MatchBranchNode)
+                                MinorNode.Nodes.Add(BranchNode)
+                                For k = line To lstAllLines.Items.Count - 1
+                                    Try
+                                        strLine = lstAllLines.Items(k).ToString
+                                        If RegBranchDetails.IsMatch(strLine) = True Then
+                                            Dim MatchBranchDetailNode = RegBranchDetails.Match(strLine).Value
+                                            Dim BranchDetailNode As New TreeNode(MatchBranchDetailNode)
+                                            BranchNode.Nodes.Add(BranchDetailNode)
+                                            lstAllLines.Items.Remove(strLine)
+                                        Else
+                                            End
+                                        End If
+                                    Catch ex As Exception
+                                    End Try
+                                    line = +1
+                                    Debug.Print("K: " & k & "    items.count: " & lstAllLines.Items.Count & "")
+                                Next
+                                lstAllLines.Items.Remove(strLine)
+                            End If
+                            line = +1
+                            Debug.Print("J: " & j & "    items.count: " & lstAllLines.Items.Count & "")
+                        Next
+                        lstAllLines.Items.Remove(strLine)
+                    End If
+                    line = +1
+                    Debug.Print("I: " & i & "    items.count: " & lstAllLines.Items.Count & "")
+                Next
+                lstAllLines.Items.Remove(strLine)
+            End If
+            Debug.Print("L: " & line & "    items.count: " & lstAllLines.Items.Count & "")
+        Next
+
+    End Sub
